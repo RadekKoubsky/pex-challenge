@@ -1,0 +1,43 @@
+package org.rkoubsky;
+
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
+import java.util.concurrent.Semaphore;
+import java.util.concurrent.TimeUnit;
+
+public class BoundedExecutor {
+    private final ExecutorService exec;
+    private final Semaphore semaphore;
+
+    public BoundedExecutor(final ExecutorService exec, final int bound) {
+        this.exec = exec;
+        /**
+         * set the bound on the semaphore to be equal to
+         * the pool size plus the number of queued tasks you want to allow
+         */
+        this.semaphore = new Semaphore(bound);
+    }
+
+    public void submitTask(final Runnable command) throws InterruptedException {
+        this.semaphore.acquire();
+        try {
+            this.exec.execute(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        command.run();
+                    } finally {
+                        BoundedExecutor.this.semaphore.release();
+                    }
+                }
+            });
+        } catch (final RejectedExecutionException e) {
+            this.semaphore.release();
+        }
+    }
+
+    public void stop() throws InterruptedException {
+        this.exec.shutdown();
+        this.exec.awaitTermination(10, TimeUnit.SECONDS);
+    }
+}
