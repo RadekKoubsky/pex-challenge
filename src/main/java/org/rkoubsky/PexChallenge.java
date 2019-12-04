@@ -2,10 +2,7 @@ package org.rkoubsky;
 
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingQueue;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 public class PexChallenge {
@@ -15,8 +12,7 @@ public class PexChallenge {
 
     public static void main(final String[] args) throws IOException, InterruptedException {
         final String fileName = args[0];
-        final ExecutorService exec = Executors.newFixedThreadPool(N_PRODUCERS);
-        final BoundedExecutor boundedExec = new BoundedExecutor(exec, N_PRODUCERS + MAX_TASKS);
+        final BoundedExecutor boundedExec = new BoundedExecutor(N_PRODUCERS, MAX_TASKS);
         final BlockingQueue<PrevalentColors> imageQueue = new LinkedBlockingQueue<>();
 
         final ImagesService imagesService = new ImagesService(boundedExec, imageQueue);
@@ -26,7 +22,7 @@ public class PexChallenge {
         final long start = System.nanoTime();
         writer.start();
         imagesService.process(fileName);
-        waitForFinish(exec);
+        waitForFinish(boundedExec);
         final long elapsedTime = System.nanoTime() - start;
         System.out.printf("Processing %s images has finished, took %s s\n", writerTask.getProcessedImages().longValue(),
                           TimeUnit.SECONDS.convert(elapsedTime, TimeUnit.NANOSECONDS));
@@ -34,9 +30,8 @@ public class PexChallenge {
         writer.interrupt();
     }
 
-    private static void waitForFinish(final ExecutorService exec) throws InterruptedException {
-        final ThreadPoolExecutor threadPoolExecutor = (ThreadPoolExecutor) exec;
-        while (threadPoolExecutor.getActiveCount() > 0){
+    private static void waitForFinish(final BoundedExecutor exec) throws InterruptedException {
+        while (exec.activeThreads() > 0){
             TimeUnit.SECONDS.sleep(3);
         }
     }
