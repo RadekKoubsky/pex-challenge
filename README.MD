@@ -23,7 +23,7 @@ Run `mvn clean package` to build the application.
 
 Run `java -jar target/pex-challenge-1.0-SNAPSHOT.jar images.txt` to run the application or using maven `mvn exec:java -Dexec.args="images.txt"`
 
-##Test run
-Run on i7-4600U with 2 cores and 4 threads, 12 GB memory. 
+## Test run
+Run on i7-4600U with 2 cores and 4 threads, 12 GB memory.
 
 Total time 250 seconds.
